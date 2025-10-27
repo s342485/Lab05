@@ -1,5 +1,7 @@
 import flet as ft
+from flet.core import page
 from alert import AlertManager
+from automobile import Automobile
 from autonoleggio import Autonoleggio
 
 FILE_AUTO = "automobili.csv"
@@ -36,7 +38,39 @@ def main(page: ft.Page):
     lista_auto = ft.ListView(expand=True, spacing=5, padding=10, auto_scroll=True)
 
     # Tutti i TextField per le info necessarie per aggiungere una nuova automobile (marca, modello, anno, contatore posti)
-    # TODO
+    input_marca = ft.TextField(label="Marca")
+    input_modello = ft.TextField(label="Modello")
+    input_anno = ft.TextField(label="Anno", keyboard_type=ft.KeyboardType.NUMBER)
+
+    # Campo per il CONTATORE (solo visualizzazione)
+    txt_number = ft.TextField(
+        value="0",
+        text_align=ft.TextAlign.CENTER,
+        width=60,
+        read_only=True  #con read_only=True → il testo può essere letto ma non scritto a mano dall’utente;
+                        #con read_only=False (comportamento predefinito) → l’utente può cliccare dentro la casella e scrivere qualsiasi valore
+    )
+    # Handler per incrementare e decrementare
+    def minus_click(e):
+        if txt_number.value > 0:
+            txt_number.value = int(txt_number.value) - 1
+            page.update()
+        else:
+            txt_number.value=0
+
+    def plus_click(e):
+        txt_number.value = int(txt_number.value) + 1
+        page.update()
+
+    # Riga con pulsanti - e +
+    contatore_posti = ft.Row(
+        controls=[
+            ft.IconButton(icon=ft.Icons.REMOVE, on_click=minus_click, icon_color="red"), #on click vuol dire quando schiaccio il click
+            txt_number,
+            ft.IconButton(icon=ft.Icons.ADD, on_click=plus_click, icon_color="green"),
+        ],
+        alignment=ft.MainAxisAlignment.CENTER
+    )
 
     # --- FUNZIONI APP ---
     def aggiorna_lista_auto():
@@ -58,14 +92,39 @@ def main(page: ft.Page):
         page.update()
 
     # Handlers per la gestione dei bottoni utili all'inserimento di una nuova auto
-    # TODO
+    def aggiungi_auto(e):
+        marca = input_marca.value
+        modello = input_modello.value
+        anno = input_anno.value
+        num_posti = int(txt_number.value)
+
+        if not marca or not modello or not anno or not num_posti:
+            alert.show_alert("⚠️ Compila tutti i campi prima di aggiungere l'auto.")
+            return
+
+        # Controlla che anno e numero posti siano numeri validi
+        if not anno.isdigit() or num_posti == 0:
+            alert.show_alert("❌ Errore: inserisci valori numerici validi per anno e posti")
+            return
+        try:
+            #aggiungo l'automobile alla lista fisica e poi aggiorno l'interfaccia
+            autonoleggio.aggiungi_automobile(marca, modello, anno, num_posti)
+            aggiorna_lista_auto()
+
+            # Pulisco i campi dopo l'inserimento
+            input_marca.value = ""
+            input_modello.value = ""
+            input_anno.value = ""
+            txt_number.value = "0"
+            page.update()
+        except Exception as e:
+            alert.show_alert(f"Errore verificatosi nell'aggiunta dell'automobile. Errore {e}")
 
     # --- EVENTI ---
     toggle_cambia_tema = ft.Switch(label="Tema scuro", value=True, on_change=cambia_tema)
     pulsante_conferma_responsabile = ft.ElevatedButton("Conferma", on_click=conferma_responsabile)
-
-    # Bottoni per la gestione dell'inserimento di una nuova auto
-    # TODO
+    # Bottoni per la gestione de l'inserimento di una nuova auto
+    pulsante_aggiungi_auto = ft.ElevatedButton("Aggiungi Auto", on_click=aggiungi_auto)
 
     # --- LAYOUT ---
     page.add(
@@ -81,9 +140,12 @@ def main(page: ft.Page):
         ft.Row(spacing=200,
                controls=[input_responsabile, pulsante_conferma_responsabile],
                alignment=ft.MainAxisAlignment.CENTER),
+        ft.Divider(),
 
         # Sezione 3
-        # TODO
+        ft.Text("Aggiungi Nuova Automobile", size=20),
+        ft.Row(spacing=50, controls=[input_marca, input_modello, input_anno, contatore_posti]),
+        ft.Row(spacing=150, controls=[pulsante_aggiungi_auto], alignment=ft.MainAxisAlignment.CENTER),
 
         # Sezione 4
         ft.Divider(),

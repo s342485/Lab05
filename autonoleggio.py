@@ -3,7 +3,6 @@ from operator import attrgetter
 from automobile import Automobile
 from noleggio import Noleggio
 
-
 class Autonoleggio:
     def __init__(self, nome, responsabile):
         self._nome = nome
