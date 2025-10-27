@@ -10,6 +10,7 @@ def main(page: ft.Page):
     page.title = "Lab05"
     page.horizontal_alignment = "center"
     page.theme_mode = ft.ThemeMode.DARK
+    page.scroll = ft.ScrollMode.AUTO
 
     # --- ALERT ---
     alert = AlertManager(page)
@@ -36,11 +37,18 @@ def main(page: ft.Page):
 
     # ListView per mostrare la lista di auto aggiornata
     lista_auto = ft.ListView(expand=True, spacing=5, padding=10, auto_scroll=True)
+    lista_noleggi = ft.ListView(expand=True, spacing=5, padding=10, auto_scroll=True)
 
-    # Tutti i TextField per le info necessarie per aggiungere una nuova automobile (marca, modello, anno, contatore posti)
+    # TextField per aggiungere una nuova automobile
     input_marca = ft.TextField(label="Marca")
     input_modello = ft.TextField(label="Modello")
     input_anno = ft.TextField(label="Anno", keyboard_type=ft.KeyboardType.NUMBER)
+
+    #Texfield per il noleggio
+    input_data = ft.TextField(label="Data (es.27/10/2025)", keyboard_type=ft.KeyboardType.NUMBER)
+    input_id_auto = ft.TextField(label="ID Auto", keyboard_type=ft.KeyboardType.NUMBER)
+    input_cognome = ft.TextField(label="Cognome cliente")
+    input_id_noleggio = ft.TextField(label="ID Noleggio", keyboard_type=ft.KeyboardType.NUMBER)
 
     # Campo per il CONTATORE (solo visualizzazione)
     txt_number = ft.TextField(
@@ -78,6 +86,13 @@ def main(page: ft.Page):
         for auto in autonoleggio.automobili_ordinate_per_marca():
             stato = "✅" if auto.disponibile else "⛔"
             lista_auto.controls.append(ft.Text(f"{stato} {auto}"))
+        page.update()
+
+    def aggiorna_lista_noleggio():
+        lista_noleggi.controls.clear()
+        for noleggio in autonoleggio.noleggi:
+            stato = "✅"
+            lista_noleggi.controls.append(ft.Text(f"{stato} {noleggio}"))
         page.update()
 
     # --- HANDLERS APP ---
@@ -120,11 +135,61 @@ def main(page: ft.Page):
         except Exception as e:
             alert.show_alert(f"Errore verificatosi nell'aggiunta dell'automobile. Errore {e}")
 
+    def aggiungi_noleggio(e):
+        data = input_data.value.strip()
+        id_automobile = input_id_auto.value.strip()
+        cognome = input_cognome.value.strip()
+
+        if not data or not id_automobile or not cognome:
+            alert.show_alert("⚠️ Compila tutti i campi per registrare un noleggio.")
+            return
+
+        if not id_automobile.startswith("A"):
+            alert.show_alert("❌ Il codice auto deve iniziare con 'A'.")
+            return
+
+        try:
+            noleggio = autonoleggio.nuovo_noleggio(data, id_automobile, cognome)
+            alert.show_alert(f"✅ Noleggio creato correttamente. "
+                             f"Codice: {noleggio.codice} | Auto noleggiato dal signor/a {noleggio.cognome_cliente} in data {noleggio.data}")
+            aggiorna_lista_auto()
+            aggiorna_lista_noleggio()
+
+            input_data.value = ""
+            input_id_auto.value = ""
+            input_cognome.value = ""
+            page.update()
+
+        except Exception as ex:
+            alert.show_alert(f"❌ Errore: {ex}")
+
+
+    def termina_noleggio(e):
+        id_noleggio = input_id_noleggio.value.strip()
+
+        if not id_noleggio:
+            alert.show_alert("⚠️ Inserisci un ID noleggio.")
+            return
+        try:
+            autonoleggio.termina_noleggio(id_noleggio)
+            alert.show_alert(f"✅ Noleggio {id_noleggio} terminato correttamente.")
+            #Pulisco il Textfield
+            input_id_noleggio.value = ""
+            aggiorna_lista_noleggio()
+            #aggiorna l'auto in modo che tolga la x
+            aggiorna_lista_auto()
+
+            #aggiorna la pagina
+            page.update()
+        except Exception as ex:
+            alert.show_alert(f"❌ Errore: {ex}")
+
     # --- EVENTI ---
     toggle_cambia_tema = ft.Switch(label="Tema scuro", value=True, on_change=cambia_tema)
     pulsante_conferma_responsabile = ft.ElevatedButton("Conferma", on_click=conferma_responsabile)
-    # Bottoni per la gestione de l'inserimento di una nuova auto
     pulsante_aggiungi_auto = ft.ElevatedButton("Aggiungi Auto", on_click=aggiungi_auto)
+    pulsante_aggiungi_noleggio = ft.ElevatedButton("Aggiungi Noleggio", on_click=aggiungi_noleggio )
+    pulsante_termina_noleggio = ft.ElevatedButton("Termina Noleggio", on_click=termina_noleggio)
 
     # --- LAYOUT ---
     page.add(
@@ -147,10 +212,27 @@ def main(page: ft.Page):
         ft.Row(spacing=50, controls=[input_marca, input_modello, input_anno, contatore_posti]),
         ft.Row(spacing=150, controls=[pulsante_aggiungi_auto], alignment=ft.MainAxisAlignment.CENTER),
 
-        # Sezione 4
+        #Sezione 4
+        ft.Divider(),
+        ft.Text("Noleggio Automobile", size=20),
+        ft.Row(spacing=50, controls=[input_data, input_id_auto, input_cognome]),
+        ft.Row(spacing=150, controls=[pulsante_aggiungi_noleggio], alignment=ft.MainAxisAlignment.CENTER),
+
+        #sezione 5
+        ft.Divider(),
+        ft.Text("Termine Noleggio", size=20),
+        ft.Row(spacing=50, controls=[input_id_noleggio,pulsante_termina_noleggio], alignment=ft.MainAxisAlignment.CENTER),
+
+        # Sezione 6
         ft.Divider(),
         ft.Text("Automobili", size=20),
         lista_auto,
+
+        #sezione 7
+        ft.Divider(),
+        ft.Text("Noleggi", size=20),
+        lista_noleggi
+
     )
     aggiorna_lista_auto()
 
