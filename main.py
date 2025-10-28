@@ -32,12 +32,12 @@ def main(page: ft.Page):
         weight=ft.FontWeight.BOLD
     )
 
-    # TextField per responsabile
-    input_responsabile = ft.TextField(value=autonoleggio.responsabile, label="Responsabile")
-
     # ListView per mostrare la lista di auto aggiornata
     lista_auto = ft.ListView(expand=True, spacing=5, padding=10, auto_scroll=True)
     lista_noleggi = ft.ListView(expand=True, spacing=5, padding=10, auto_scroll=True)
+
+    # TextField per responsabile
+    input_responsabile = ft.TextField(value=autonoleggio.responsabile, label="Responsabile")
 
     # TextField per aggiungere una nuova automobile
     input_marca = ft.TextField(label="Marca")
